@@ -3,5 +3,6 @@ seaborn
 tda-api
 flask
 streamlit
+watchdog
 appdirs
 streamlit_autorefresh
