@@ -1,7 +1,3 @@
-import json
-
-import pandas as pd
-
 from datastructures import Config
 from tda.client import Client as TDAclient
 
@@ -44,12 +40,3 @@ class AccountData(object):
 
     def to_dataframe(self, index_label: str = "Stats"):
         pass
-
-def get_display_df(ad: AccountData, index: list =["Stats"]):
-    d = {}
-    d['NLV'] = ad.nlv
-    d['BPu'] = ad.bpu
-    d['Buying Power'] = ad.bp_available
-    d['Short Unit Max'] = ad.sutmax
-    df = pd.DataFrame(d, index=index)
-    return df
