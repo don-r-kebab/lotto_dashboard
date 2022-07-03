@@ -4,7 +4,7 @@ import json
 from tda.client import Client as TDAclient
 import utils
 import pandas as pd
-from config import Config
+from datastructures import Config
 
 ACCOUNT_FIELDS = tda.client.Client.Account.Fields
 

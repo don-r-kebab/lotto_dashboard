@@ -4,14 +4,14 @@ import streamlit as st
 import argparse
 import tda
 import pandas as pd
-from flask_buddy import Config
+from datastructures import Config
+from accountdata import AccountData
 
-import flask_buddy as fb
 from streamlit_autorefresh import st_autorefresh
 
 ## Settings commands
 
-REFRESH_TIME_MS = 1000*120
+REFRESH_TIME_MS = 1000*300
 refresh_count = 0
 st.set_page_config(layout="wide")
 st_autorefresh(REFRESH_TIME_MS, key=refresh_count)
@@ -20,8 +20,12 @@ st_autorefresh(REFRESH_TIME_MS, key=refresh_count)
 #### Globals
 
 CONFIG: Config = Config()
-ACCOUNT_DATA: dict = fb.ACCOUNT_DATA
+ACCOUNT_DATA: AccountData = AccountData()
 
+CONTRACT_TYPE = tda.client.Client.Options.ContractType
+ORDER_STATUS = tda.client.Client.Order.Status
+FIELDS = tda.client.Client.Account.Fields
+TRANSACTION_TYPES = tda.client.Client.Transactions.TransactionType
 
 #@st.caching
 def main(**argv):
