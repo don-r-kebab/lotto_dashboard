@@ -6,3 +6,4 @@ streamlit
 watchdog
 appdirs
 streamlit_autorefresh
+sqlalchemy

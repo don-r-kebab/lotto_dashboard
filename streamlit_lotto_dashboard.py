@@ -1,13 +1,18 @@
 import datetime
+import json
 
 import streamlit as st
 import argparse
 import tda
+from tda.client import Client as TDAclient
 import pandas as pd
+
+import dataccess
 from datastructures import Config
 from accountdata import AccountData
 
 from streamlit_autorefresh import st_autorefresh
+
 
 ## Settings commands
 
@@ -27,13 +32,25 @@ ORDER_STATUS = tda.client.Client.Order.Status
 FIELDS = tda.client.Client.Account.Fields
 TRANSACTION_TYPES = tda.client.Client.Transactions.TransactionType
 
+
+
+def get_display_df(ad: AccountData, index: list =["Stats"]):
+    d = {}
+    d['NLV'] = ad.nlv
+    d['BPu'] = ad.bpu
+    d['Buying Power'] = ad.bp_available
+    d['Short Unit Max'] = ad.sutmax
+    df = pd.DataFrame(d, index=index)
+    return df
+
 #@st.caching
 def main(**argv):
-    global CONFIG, ACCOUNT_DATA
-    conf = CONFIG
+    global CONFIG, ACCOUNT_DATA, FIELDS
+    conf: Config = CONFIG
+    adata: AccountData = ACCOUNT_DATA
     client = tda.auth.easy_client(conf.apikey, conf.callbackuri, conf.tokenpath)
-    fb.calc_account_data(client, conf, fb.ACCOUNT_DATA)
-    acc_json = client.get_account(conf.accountnum, fields=[fb.FIELDS.POSITIONS]).json()
+    adata.calc_account_data(client, conf)
+    acc_json = client.get_account(conf.accountnum, fields=[FIELDS.POSITIONS]).json()
     accdata = acc_json['securitiesAccount']
     positions = accdata['positions']
     st.write("Updated - {}".format(datetime.datetime.now()))
@@ -48,8 +65,7 @@ def main(**argv):
             #st.write("BP: {}".format(fb.ACCOUNT_DATA['BP_Available']))
             #st.write("BPu: {}".format(fb.ACCOUNT_DATA['BPu']))
             #acc_df = pd.DataFrame.from_dict(fb.ACCOUNT_DATA, orient='columns', index=[0])
-            acc_df = pd.DataFrame(fb.ACCOUNT_DATA, index=["Stats"])
-            sidebar_df = acc_df.drop(columns=['Starting_NLV', 'Starting_BP', 'Starting_BPu', "Max_Short_Units"])
+            sidebar_df = get_display_df(adata)
             sidebar_df['BPu'] = sidebar_df['BPu'].astype(int)
             st.table(sidebar_df.T)
 
@@ -65,11 +81,11 @@ def main(**argv):
     ):
         st.header("Today's Stats")
         try:
-            todays_premium = round(fb.get_premium_today(client, conf.accountnum)*100,2)
+            todays_premium = round(dataccess.get_premium_today(client, conf)*100,2)
             if todays_premium is None:
                 todays_premium = 0
-            todays_pct = round(todays_premium/fb.ACCOUNT_DATA['NLV']*100,2)
-            order_counts = fb.get_order_count(client, conf, conf.accountnum)
+            todays_pct = round(todays_premium/adata.nlv * 100,2)
+            order_counts = dataccess.get_order_count(client, conf)
         except Exception as e:
             print(e)
             raise e
@@ -83,7 +99,7 @@ def main(**argv):
         expanded=True
     ):
         st.header("Short Unit Test", )
-        sutdf = fb.sut_test(positions, ACCOUNT_DATA['Max_Short_Units'])
+        sutdf = dataccess.sut_test(positions, adata.sutmax)
         sdf = pd.DataFrame(sutdf, index=[0])
         sdf.index = sdf['type'].astype(str)
         sdf = sdf.drop(columns=['type'])
@@ -93,7 +109,7 @@ def main(**argv):
             method_list,
             index=0
         )
-        st.write("SUT Max: {}".format(fb.ACCOUNT_DATA['Max_Short_Units']))
+        st.write("SUT Max: {}".format(adata.sutmax))
 
         sut_col1, sut_col2 = st.columns(2)
                 #print(idx)
@@ -143,7 +159,7 @@ def main(**argv):
         )
         min_otm = int(min_otm_select_value)/100.0
         print(min_otm)
-        red_alert_df = fb.get_red_alert_df(client, positions)
+        red_alert_df = dataccess.get_otm_df(conf)
         st.dataframe(
             red_alert_df.loc[red_alert_df['otm'] < min_otm, :]
         )

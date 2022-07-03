@@ -10,8 +10,7 @@ import tda
 
 import dataccess
 import streamlit_lotto_dashboard as sb
-import flask_buddy as fb
-from flask_buddy import Config
+from datastructures import Config
 
 print(__name__)
 print(st.session_state['configfile'])
@@ -217,8 +216,9 @@ def plot_outstanding_premium(stconf_con, stplot_con, config):
 
 
 def __get_outstanding_premium_by_expiration(conf: Config):
+    FIELDS = tda.client.Client.Account.Fields
     client = tda.auth.easy_client(conf.apikey, conf.callbackuri, conf.tokenpath)
-    acc_json = client.get_account(conf.accountnum, fields=[fb.FIELDS.POSITIONS]).json()
+    acc_json = client.get_account(conf.accountnum, fields=[FIELDS.POSITIONS]).json()
     accdata = acc_json['securitiesAccount']
     positions = accdata['positions']
     p = {}

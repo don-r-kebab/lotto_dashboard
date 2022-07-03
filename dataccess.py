@@ -5,6 +5,7 @@ from tda.client import Client as TDAclient
 import utils
 import pandas as pd
 from datastructures import Config
+from datetime import datetime, time
 
 ACCOUNT_FIELDS = tda.client.Client.Account.Fields
 
@@ -87,3 +88,111 @@ def get_pmtlt_db_conn():
     conn = sqlalchemy.create_engine(uri)
     #print(conn)
     return conn
+
+def get_order_count(client: TDAclient, conf: Config):
+    ocount = 0
+    TODAY = datetime.today()
+    bod = datetime.combine(TODAY, time.min)
+    eod = datetime.combine(TODAY, time.max)
+    orders = client.get_orders_by_path(
+        conf.accountnum,
+        to_entered_datetime=eod,
+        from_entered_datetime=bod
+    )
+    orders = json.loads(orders.text)
+    for order in orders:
+        et = order['enteredTime']
+        submit_time = datetime.strptime(et, "%Y-%m-%dT%H:%M:%S%z")
+        if submit_time.date()==TODAY:
+            ocount += 1
+    return ocount
+
+def get_premium_today(client: TDAclient, config: Config):
+    TODAY = datetime.today()
+    bod = datetime.combine(TODAY, time.min)
+    eod = datetime.combine(TODAY, time.max)
+    orders = client.get_orders_by_path(
+        config.accountnum,
+        to_entered_datetime=eod,
+        from_entered_datetime=bod
+    )
+    orders = json.loads(orders.text)
+    t = 0
+    for order in orders:
+        try:
+            ot = order['orderType']
+            if ot == "TRAILING_STOP":
+                continue
+            price = order['price']
+            quant = order['filledQuantity']
+            tot = price * quant
+            olc = order['orderLegCollection']
+            if olc[0]['orderLegType'] != "OPTION":
+                continue
+            pe = None
+            cot = order['complexOrderStrategyType']
+            if cot == "NONE":
+                for olcd in olc:
+                    pe = olcd['positionEffect']
+                    instruct = olcd['instruction']
+                    if instruct == "SELL_TO_OPEN":
+                        pass
+                    elif instruct == "BUY_TO_OPEN":
+                        tot *= -1
+                    elif instruct == "SELL_TO_CLOSE":
+                        pass
+                    elif instruct == "BUY_TO_CLOSE":
+                        tot *= -1
+            else:
+                ot = order['orderType']
+                if ot == "NET_DEBIT":
+                    tot *= -1
+                elif ot == "NET_CREDIT":
+                    pass
+                else:
+                    raise Exception("invalid order found {}".format(json.dumps(order, indent=4)))
+            t += tot
+        except Exception as e:
+            print(order)
+            print(e)
+            pass
+    #print(json.dumps(orders, indent=4))
+    return t
+
+def sut_test(pjson, sutmax=-1):
+    res = []
+    unweighed_calc = {
+        'CALL_COUNT': 0,
+        'CALL_REMAINING': sutmax,
+        'CALL_PCT_USED': 0,
+        'PUT_COUNT': 0,
+        'PUT_REMAINING': sutmax,
+        'PUT_PCT_USED': 0,
+        "type": "unweighted"
+    }
+    #print(json.dumps(unweighed_calc, indent=4))
+    for pos in pjson:
+        p_ins = pos['instrument']
+        if p_ins['assetType'] != "OPTION":
+            continue
+        try:
+            otype = pos['instrument']['putCall']
+            count_type = otype  + "_COUNT"
+            remaining_type =  otype + "_REMAINING"
+        except KeyError as ke:
+            print(json.dumps(pos, indent=4))
+            print(ke)
+            raise ke
+        unweighed_calc[count_type] -= pos['shortQuantity']
+        unweighed_calc[count_type] += pos['longQuantity']
+        unweighed_calc[remaining_type] -= pos['shortQuantity']
+        unweighed_calc[remaining_type] += pos['longQuantity']
+    #print(unweighed_calc)
+    if unweighed_calc["CALL_REMAINING"] > sutmax:
+        unweighed_calc["CALL_REMAINING"] = sutmax
+    if unweighed_calc["PUT_REMAINING"] > sutmax:
+        unweighed_calc["PUT_REMAINING"] = sutmax
+    unweighed_calc["CALL_PCT_USED"] = -1*round((unweighed_calc['CALL_COUNT']/sutmax)*100, 2)
+    unweighed_calc["PUT_PCT_USED"] = -1*round((unweighed_calc['PUT_COUNT']/sutmax)*100, 2)
+    res.append(unweighed_calc)
+    return res
