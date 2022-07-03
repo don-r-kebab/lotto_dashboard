@@ -1,9 +1,7 @@
 import streamlit as st
 import pandas as pd
-import flask_buddy as fb
 import tda
 from  tda.client import Client
-from flask_buddy import Config
 
 def todays_stats(
         stcontainer: st.container,
