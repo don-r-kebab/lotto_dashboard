@@ -71,23 +71,7 @@ def get_positions_json(config: Config):
     positions = accdata['positions']
     return positions
 
-def get_pmtlt_db_conn():
-    from appdirs import user_data_dir, user_config_dir
-    from pathlib import Path
-    import sqlalchemy
-    #global CONFIG
-    #conf = CONFIG
-    PACKAGE_NAME = "pmtlottotracker"
-    AUTHOR = "PMTraders"
-    CONFIG_DIR = user_config_dir(appname=PACKAGE_NAME, appauthor=AUTHOR)
-    CONFIG_PATH = Path(CONFIG_DIR, "config.toml")
-    DATA_DIR = user_data_dir(appname=PACKAGE_NAME, appauthor=AUTHOR)
-    DB_PATH = Path(DATA_DIR, "Lotto-Tracker.db")
-    uri = "sqlite:///{}".format(DB_PATH)
-    #print(uri)
-    conn = sqlalchemy.create_engine(uri)
-    #print(conn)
-    return conn
+
 
 def get_order_count(client: TDAclient, conf: Config):
     ocount = 0

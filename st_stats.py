@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import tda
+from datastructures import Config
 from  tda.client import Client
 
 def todays_stats(

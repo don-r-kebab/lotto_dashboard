@@ -19,13 +19,19 @@ from streamlit_autorefresh import st_autorefresh
 REFRESH_TIME_MS = 1000*300
 refresh_count = 0
 st.set_page_config(layout="wide")
-st_autorefresh(REFRESH_TIME_MS, key=refresh_count)
+#st_autorefresh(REFRESH_TIME_MS, key=refresh_count)
 
 
 #### Globals
 
 CONFIG: Config = Config()
 ACCOUNT_DATA: AccountData = AccountData()
+CONFIG_OK = False
+DB_OK = False
+ALLOW_API = True
+ALLOW_DB = True
+USE_PMLT_DB = True
+USE_API = True
 
 CONTRACT_TYPE = tda.client.Client.Options.ContractType
 ORDER_STATUS = tda.client.Client.Order.Status
@@ -43,31 +49,54 @@ def get_display_df(ad: AccountData, index: list =["Stats"]):
     df = pd.DataFrame(d, index=index)
     return df
 
+
 #@st.caching
 def main(**argv):
-    global CONFIG, ACCOUNT_DATA, FIELDS
+    global CONFIG, ACCOUNT_DATA, FIELDS, USE_PMLT_DB
     conf: Config = CONFIG
     adata: AccountData = ACCOUNT_DATA
-    client = tda.auth.easy_client(conf.apikey, conf.callbackuri, conf.tokenpath)
-    adata.calc_account_data(client, conf)
-    acc_json = client.get_account(conf.accountnum, fields=[FIELDS.POSITIONS]).json()
-    accdata = acc_json['securitiesAccount']
-    positions = accdata['positions']
+    #client = tda.auth.easy_client(conf.apikey, conf.callbackuri, conf.tokenpath)
+    #adata.calc_account_data(config=conf, api=USE_PMLT_DB)
+    adata.get_account_data(config=conf, api=USE_PMLT_DB)
+    #acc_json = client.get_account(conf.accountnum, fields=[FIELDS.POSITIONS]).json()
+    #accdata = acc_json['securitiesAccount']
+    #positions = accdata['positions']
     st.write("Updated - {}".format(datetime.datetime.now()))
 
     with st.sidebar:
+        print("Use db?", USE_PMLT_DB)
+        data_source = st.selectbox(
+            "Data source to use?",
+            (
+                "PMT Lotto Track DB",
+                "API"
+            )
+        )
+        if data_source == "API":
+            USE_PMLT_DB = False
+        else:
+            USE_PMLT_DB = True
+        print("Use db?", USE_PMLT_DB)
         with st.expander(
                 "Account Stats",
                 expanded=True
         ):
-            #st.write("Account Stats")
-            #st.write("NLV: {}".format(fb.ACCOUNT_DATA['NLV']))
-            #st.write("BP: {}".format(fb.ACCOUNT_DATA['BP_Available']))
-            #st.write("BPu: {}".format(fb.ACCOUNT_DATA['BPu']))
-            #acc_df = pd.DataFrame.from_dict(fb.ACCOUNT_DATA, orient='columns', index=[0])
             sidebar_df = get_display_df(adata)
             sidebar_df['BPu'] = sidebar_df['BPu'].astype(int)
             st.table(sidebar_df.T)
+        if USE_PMLT_DB is False:
+            ALLOW_DB = st.checkbox(
+                "Allow Database",
+                value=False
+            )
+            st.write("Some plots require database")
+        else:
+            ALLOW_API = st.checkbox(
+                "Allow API",
+                value=False
+            )
+            st.write("May enable/disable certain function")
+    return 0
 
     st.title("Lotto Dashboard")
     #with st.expander("Account"):
@@ -164,6 +193,7 @@ def main(**argv):
             red_alert_df.loc[red_alert_df['otm'] < min_otm, :]
         )
 
+def setup():
 
 
 if __name__ == '__main__':

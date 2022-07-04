@@ -8,6 +8,7 @@ class Config(object):
         self.callbackuri = None
         self.accountnum = None
         self.tokenpath = None
+        self.pmlt_db = None
 
     def read_config(self, config_file):
         print("Reading config")
