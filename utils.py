@@ -7,3 +7,19 @@ def flatten_positions(pjson):
         del(pdict['instrument'])
     #print(json.dumps(pdict[k], indent=4))
     return
+
+def check_streamlit():
+    """
+    Function to check whether python code is run within streamlit
+
+    Returns
+    -------
+    use_streamlit : boolean
+        True if code is run within streamlit, else False
+    """
+    try:
+        from streamlit.scriptrunner import get_script_run_ctx
+        return get_script_run_ctx() is not None
+    except ModuleNotFoundError:
+        return False
+
