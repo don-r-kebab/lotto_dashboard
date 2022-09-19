@@ -90,20 +90,28 @@ def get_pmtlt_db_conn():
     return conn
 
 def get_order_count(client: TDAclient, conf: Config):
+    print("Getting order count")
     ocount = 0
     TODAY = datetime.today()
-    bod = datetime.combine(TODAY, time.min)
-    eod = datetime.combine(TODAY, time.max)
+    #bod = datetime.combine(TODAY, time.min)
+    bod = datetime.today().replace(hour=0, minute=0, second=0)
+    eod = datetime.today().replace(hour=23, minute=59, second=59)
+    #eod = datetime.combine(TODAY, time.max)
+    #bod=datetime(2022, 9, 16)
+    #p#rint("bod:\t", bod )
+    #print("eod:\t", eod)
     orders = client.get_orders_by_path(
         conf.accountnum,
-        to_entered_datetime=eod,
-        from_entered_datetime=bod
+        from_entered_datetime=bod,
+        to_entered_datetime=eod
     )
     orders = json.loads(orders.text)
     for order in orders:
+        #print(order)
         et = order['enteredTime']
         submit_time = datetime.strptime(et, "%Y-%m-%dT%H:%M:%S%z")
-        if submit_time.date()==TODAY:
+        #print(submit_time)
+        if submit_time.date() == datetime.today().date():
             ocount += 1
     return ocount
 
