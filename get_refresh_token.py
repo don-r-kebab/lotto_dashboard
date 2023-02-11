@@ -34,7 +34,7 @@ if __name__ == '__main__':
     ap.add_argument("--configfile", dest='configfile', default="config.json")
     args = vars(ap.parse_args())
     c = Config()
-    if ap['nosetup'] is False:
+    if args['nosetup'] is False:
         setup(c, args['tdaconfig'], None)
     elif args['configfile'] is not None:
         c.read_config(args['configfile'])

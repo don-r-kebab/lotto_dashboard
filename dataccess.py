@@ -52,14 +52,14 @@ def get_otm_df(conf: Config):
             'underlyingSymbol',
             "symbol",
             'description',
+            'spotPrice',
+            'otm',
             'quantity',
             'averagePrice',
             'currentValue',
-            'ctype',
+            'percentChange',
             'strikePrice',
-            #'percentChange',
-            'spotPrice',
-            'otm'
+            'ctype'
         ]
     ].sort_values(['otm'])
     return subdf

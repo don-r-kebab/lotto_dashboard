@@ -159,7 +159,7 @@ def main(**argv):
         )
         min_otm = int(min_otm_select_value)/100.0
         print(min_otm)
-        red_alert_df = dataccess.get_otm_df(conf)
+        red_alert_df = dataccess.get_otm_df(conf).drop(columns=['ctype', 'symbol'])
         st.dataframe(
             red_alert_df.loc[red_alert_df['otm'] < min_otm, :]
         )

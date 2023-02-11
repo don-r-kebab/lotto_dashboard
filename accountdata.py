@@ -1,5 +1,6 @@
 from datastructures import Config
 from tda.client import Client as TDAclient
+import json
 
 
 class AccountData(object):
@@ -25,7 +26,12 @@ class AccountData(object):
         self.sutmax = 0
 
     def calc_account_data(self, client: TDAclient, conf: Config):
-        acc = client.get_account(conf.accountnum).json()['securitiesAccount']
+        try:
+            acc_data = client.get_account(conf.accountnum).json()
+            acc = acc_data['securitiesAccount']
+        except KeyError as ke:
+            print(json.dumps(acc))
+            raise
         self.nlv = acc['currentBalances']['liquidationValue']
         self.bp_available = acc['currentBalances']['buyingPowerNonMarginableTrade']
         self.bpu = 1 - (self.bp_available / float(self.nlv))
