@@ -75,6 +75,7 @@ def main(**argv):
     #    st.write(fb.ACCOUNT_DATA)
     #ee    #sutdf = fb.sut_test()
 
+
     with st.expander(
         "Today's stats",
         expanded=True
@@ -123,9 +124,9 @@ def main(**argv):
             #["Call Percent Used", "{}%%".format(int(mdf['CALL_PCT_USED']))]
         ]
         puts = [
-            ["Unit Count", int(mdf['PUT_COUNT'])],
-            ["Units remaining", int(mdf['PUT_REMAINING'])],
-            ["Percent Used", int(mdf['PUT_PCT_USED'])]
+            ["Put Count", int(mdf['PUT_COUNT'])],
+            ["Puts remaining", int(mdf['PUT_REMAINING'])],
+            ["Put Percent Used", int(mdf['PUT_PCT_USED'])]
         ]
         #sut_col1.write(method)
         sut_col1.subheader("Call SUT")
@@ -134,6 +135,19 @@ def main(**argv):
         sut_col2.table(puts)
         #sut_col2.table(sdf.loc[method,:].T)
 
+    with st.expander(
+        "Premium by ticker",
+        expanded=True
+    ):
+        try:
+            ticker_premium_df = dataccess.premium_today_df(client, conf)
+            #st.dataframe(ticker_premium_df.head())
+            gbdf = ticker_premium_df.groupby(['underlying']).sum()['total'].reset_index().sort_values('total', ascending=False)
+            gbdf['total'] *= 100
+            #st.write(ticker_premium_df.columns)
+            st.dataframe(gbdf)
+        except KeyError as ke:
+            st.write("No trades so far today!")
 
 
         #print(sdf)

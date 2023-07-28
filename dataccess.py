@@ -1,3 +1,4 @@
+import copy
 
 import tda
 import json
@@ -114,6 +115,55 @@ def get_order_count(client: TDAclient, conf: Config):
         if submit_time.date() == datetime.today().date():
             ocount += 1
     return ocount
+def premium_today_df(client: TDAclient, config: Config):
+    TODAY = datetime.today()
+    bod = datetime.combine(TODAY, time.min)
+    eod = datetime.combine(TODAY, time.max)
+    orders = client.get_orders_by_path(
+        config.accountnum,
+        to_entered_datetime=eod,
+        from_entered_datetime=bod
+    )
+    orders = json.loads(orders.text)
+    t = 0
+    l = []
+    for order in orders:
+        qd = {}
+        if order['status'] != "FILLED":
+            continue
+        for olc in order['orderLegCollection']:
+            legid = olc['legId']
+            qd[legid] = {}
+            qd[legid]['contract'] = olc['instrument']['symbol']
+            qd[legid]['underlying'] = olc['instrument']['underlyingSymbol']
+            qd['quantity'] = 0
+            quant = 1
+            instruct = olc['instruction']
+            if instruct == "SELL_TO_OPEN":
+                pass
+            elif instruct == "BUY_TO_OPEN":
+                quant = -1
+            elif instruct == "SELL_TO_CLOSE":
+                pass
+            elif instruct == "BUY_TO_CLOSE":
+                quant = -1
+            qd[legid]['qmod'] = quant
+
+
+        for oac in order['orderActivityCollection']:
+            if oac['executionType'] != "FILL":
+                continue
+            for leg in oac['executionLegs']:
+                d = copy.copy(qd[leg['legId']])
+                d['quantity'] = leg['quantity'] * d['qmod']
+                d['price'] = leg['price']
+                d['total'] = d['quantity'] * d['price']
+                l.append(d)
+        continue
+    df = pd.DataFrame(l)
+    return df
+
+
 
 def get_premium_today(client: TDAclient, config: Config):
     TODAY = datetime.today()
