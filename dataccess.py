@@ -116,6 +116,7 @@ def get_order_count(client: TDAclient, conf: Config):
             ocount += 1
     return ocount
 def premium_today_df(client: TDAclient, config: Config):
+    print("Getting premium today df")
     TODAY = datetime.today()
     bod = datetime.combine(TODAY, time.min)
     eod = datetime.combine(TODAY, time.max)
@@ -125,17 +126,31 @@ def premium_today_df(client: TDAclient, config: Config):
         from_entered_datetime=bod
     )
     orders = json.loads(orders.text)
+    #print(json.dumps(orders, indent=4))
     t = 0
     l = []
     for order in orders:
         qd = {}
         if order['status'] != "FILLED":
             continue
+        t += 1
+        if t==1:
+            pass
+            #print(json.dumps(order, indent=4))
         for olc in order['orderLegCollection']:
+            if olc['instrument']['assetType']=="EQUITY":
+                continue
+
             legid = olc['legId']
             qd[legid] = {}
-            qd[legid]['contract'] = olc['instrument']['symbol']
-            qd[legid]['underlying'] = olc['instrument']['underlyingSymbol']
+            try:
+                qd[legid]['contract'] = olc['instrument']['symbol']
+                qd[legid]['underlying'] = olc['instrument']['underlyingSymbol']
+            except KeyError as ke:
+                print(json.dumps(order, indent=4))
+                print(ke)
+                print(olc)
+                raise
             qd['quantity'] = 0
             quant = 1
             instruct = olc['instruction']
@@ -149,18 +164,28 @@ def premium_today_df(client: TDAclient, config: Config):
                 quant = -1
             qd[legid]['qmod'] = quant
 
-
+        oac_count = 0
         for oac in order['orderActivityCollection']:
             if oac['executionType'] != "FILL":
                 continue
             for leg in oac['executionLegs']:
-                d = copy.copy(qd[leg['legId']])
+                oac_count += 1
+                try:
+                    d = copy.copy(qd[leg['legId']])
+                except KeyError as ke:
+                    continue
                 d['quantity'] = leg['quantity'] * d['qmod']
                 d['price'] = leg['price']
                 d['total'] = d['quantity'] * d['price']
+                if oac_count == 1 and t == 1:
+                    print(json.dumps(d, indent=4))
                 l.append(d)
-        continue
+        #continue
+    print("OK")
+    print(l)
     df = pd.DataFrame(l)
+    print("DF")
+    print(df.head())
     return df
 
 

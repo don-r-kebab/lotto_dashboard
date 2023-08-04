@@ -141,7 +141,11 @@ def main(**argv):
     ):
         try:
             ticker_premium_df = dataccess.premium_today_df(client, conf)
-            #st.dataframe(ticker_premium_df.head())
+            st.dataframe(ticker_premium_df.head())
+        except Exception as e:
+            st.write(e)
+            raise
+        try:
             gbdf = ticker_premium_df.groupby(['underlying']).sum()['total'].reset_index().sort_values('total', ascending=False)
             gbdf['total'] *= 100
             #st.write(ticker_premium_df.columns)
