@@ -32,6 +32,9 @@ class AccountData(object):
         except KeyError as ke:
             print(json.dumps(acc))
             raise
+        except json.decoder.JSONDecodeError as jde:
+            print(jde)
+            return
         self.nlv = acc['currentBalances']['liquidationValue']
         self.bp_available = acc['currentBalances']['buyingPowerNonMarginableTrade']
         self.bpu = 1 - (self.bp_available / float(self.nlv))

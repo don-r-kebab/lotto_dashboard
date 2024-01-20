@@ -115,6 +115,41 @@ def get_order_count(client: TDAclient, conf: Config):
         if submit_time.date() == datetime.today().date():
             ocount += 1
     return ocount
+
+def get_orders(client: TDAclient, conf: Config):
+    bod = datetime.today().replace(hour=0, minute=0, second=0)
+    eod = datetime.today().replace(hour=23, minute=59, second=59)
+    #eod = datetime.combine(TODAY, time.max)
+    #bod=datetime(2022, 9, 16)
+    #p#rint("bod:\t", bod )
+    #print("eod:\t", eod)
+    orders = client.get_orders_by_path(
+        conf.accountnum,
+        from_entered_datetime=bod,
+        to_entered_datetime=eod
+    )
+    orders = json.loads(orders.text)
+    return orders
+
+def get_orders_back(
+        client,
+        conf,
+        startdate,
+        enddate
+):
+    bod=startdate
+    eod = enddate
+    #bod = startdate.replace(hour=0, minute=0, second=0)
+    #eod = enddate.replace(hour=23, minute=59, second=59)
+    orders = client.get_orders_by_path(
+        conf.accountnum,
+        from_entered_datetime=bod,
+        to_entered_datetime=eod
+    )
+    orders = json.loads(orders.text)
+    return orders
+
+
 def premium_today_df(client: TDAclient, config: Config):
     print("Getting premium today df")
     TODAY = datetime.today()
