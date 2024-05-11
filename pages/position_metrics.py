@@ -82,6 +82,10 @@ def get_outstanding_premium_by_expiration(plot_type):
     #df = pd.DataFrame()
     #df.columns = ['exp', 'ptype', 'count']
     for pentry in positions:
+        symbol = pentry["instrument"]['symbol'].split("_")[0]
+        if symbol == "SPX" or symbol == "SPXW":
+            continue
+        print(pentry)
         pins = pentry['instrument']
         if pins['assetType'] == "OPTION":
             raw = pentry["instrument"]['symbol'].split("_")[1][0:6]
